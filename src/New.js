@@ -1,122 +1,77 @@
-import * as React from 'react';
-import { styled, useTheme } from '@mui/material/styles';
-import Box from '@mui/material/Box';
-import CssBaseline from '@mui/material/CssBaseline';
-import MuiAppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import MenuIcon from '@mui/icons-material/Menu';
+import React, { useState, useRef } from 'react';
 
+const HighlighterApp = () => {
+  const [highlightedWords, setHighlightedWords] = useState([]);
+  const [currentColor, setCurrentColor] = useState('yellow'); // Default color
+  const [isEraserMode, setIsEraserMode] = useState(false);
+  const chartRef = useRef(null);
 
-const drawerWidth = 240;
+  const handleHighlight = (event) => {
+    if (isEraserMode) return; // Do not highlight if in eraser mode
 
-const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
-  ({ theme, open }) => ({
-    flexGrow: 1,
-    padding: theme.spacing(3),
-    transition: theme.transitions.create('margin', {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.leavingScreen,
-    }),
-    marginLeft: `-${drawerWidth}px`,
-    ...(open && {
-      transition: theme.transitions.create('margin', {
-        easing: theme.transitions.easing.easeOut,
-        duration: theme.transitions.duration.enteringScreen,
-      }),
-      marginLeft: 0,
-    }),
-  }),
-);
+    // Ensure that the event target is not a button
+    if (event.target.tagName === 'BUTTON') return;
 
-const AppBar = styled(MuiAppBar, {
-  shouldForwardProp: (prop) => prop !== 'open',
-})(({ theme, open }) => ({
-  transition: theme.transitions.create(['margin', 'width'], {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  ...(open && {
-    width: `calc(100% - ${drawerWidth}px)`,
-    marginLeft: `${drawerWidth}px`,
-    transition: theme.transitions.create(['margin', 'width'], {
-      easing: theme.transitions.easing.easeOut,
-      duration: theme.transitions.duration.enteringScreen,
-    }),
-  }),
-}));
-
-const DrawerHeader = styled('div')(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  padding: theme.spacing(0, 1),
-  // necessary for content to be below app bar
-  ...theme.mixins.toolbar,
-  justifyContent: 'flex-end',
-}));
-
-export default function PersistentDrawerLeft() {
-  const theme = useTheme();
-  const [open, setOpen] = React.useState(false);
-
-  const handleDrawerOpen = () => {
-    setOpen(true);
+    const selection = window.getSelection();
+    const selectedText = selection.toString().trim();
+    if (selectedText !== '') {
+      const range = selection.getRangeAt(0);
+      const span = document.createElement('span');
+      span.style.backgroundColor = currentColor; // Use current color
+      span.appendChild(range.extractContents());
+      range.insertNode(span);
+      span.onclick = () => {
+        if (isEraserMode) {
+          handleRemoveHighlight(span);
+        }
+      };
+      setHighlightedWords([...highlightedWords, { text: selectedText, color: currentColor, element: span }]);
+    }
   };
 
-  const handleDrawerClose = () => {
-    setOpen(false);
+  const changeColor = (color) => {
+    setCurrentColor(color);
+    setIsEraserMode(false); // Disable eraser mode when changing color
   };
+
+  const enableEraserMode = () => {
+    setIsEraserMode(true);
+  };
+
+  const handleRemoveHighlight = (element) => {
+    const parent = element.parentNode;
+    while (element.firstChild) {
+      parent.insertBefore(element.firstChild, element);
+    }
+    parent.removeChild(element);
+    setHighlightedWords(highlightedWords.filter(word => word.element !== element));
+  };
+
+  const handleClick = (e) => {
+    if (isEraserMode && e.target.tagName === 'SPAN') {
+      handleRemoveHighlight(e.target);
+    }
+  };
+
+  // Count highlighted words for each color
+  const yellowCount = highlightedWords.filter((word) => word.color === 'yellow').length;
+  const cyanCount = highlightedWords.filter((word) => word.color === 'cyan').length;
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      <CssBaseline />
-      <AppBar position="fixed" open={open}>
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerOpen}
-            edge="start"
-            sx={{ mr: 2, ...(open && { display: 'none' }) }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div">
-            Persistent drawer
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Main open={open}>
-        <DrawerHeader />
-        <Typography paragraph>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-          tempor incididunt ut labore et dolore magna aliqua. Rhoncus dolor purus non
-          enim praesent elementum facilisis leo vel. Risus at ultrices mi tempus
-          imperdiet. Semper risus in hendrerit gravida rutrum quisque non tellus.
-          Convallis convallis tellus id interdum velit laoreet id donec ultrices.
-          Odio morbi quis commodo odio aenean sed adipiscing. Amet nisl suscipit
-          adipiscing bibendum est ultricies integer quis. Cursus euismod quis viverra
-          nibh cras. Metus vulputate eu scelerisque felis imperdiet proin fermentum
-          leo. Mauris commodo quis imperdiet massa tincidunt. Cras tincidunt lobortis
-          feugiat vivamus at augue. At augue eget arcu dictum varius duis at
-          consectetur lorem. Velit sed ullamcorper morbi tincidunt. Lorem donec massa
-          sapien faucibus et molestie ac.
-        </Typography>
-        <Typography paragraph>
-          Consequat mauris nunc congue nisi vitae suscipit. Fringilla est ullamcorper
-          eget nulla facilisi etiam dignissim diam. Pulvinar elementum integer enim
-          neque volutpat ac tincidunt. Ornare suspendisse sed nisi lacus sed viverra
-          tellus. Purus sit amet volutpat consequat mauris. Elementum eu facilisis
-          sed odio morbi. Euismod lacinia at quis risus sed vulputate odio. Morbi
-          tincidunt ornare massa eget egestas purus viverra accumsan in. In hendrerit
-          gravida rutrum quisque non tellus orci ac. Pellentesque nec nam aliquam sem
-          et tortor. Habitant morbi tristique senectus et. Adipiscing elit duis
-          tristique sollicitudin nibh sit. Ornare aenean euismod elementum nisi quis
-          eleifend. Commodo viverra maecenas accumsan lacus vel facilisis. Nulla
-          posuere sollicitudin aliquam ultrices sagittis orci a.
-        </Typography>
-      </Main>
-    </Box>
+    <div onMouseUp={handleHighlight} onClick={handleClick}>
+      <button onClick={() => changeColor('yellow')}>Yellow</button>
+      <button onClick={() => changeColor('cyan')}>Cyan</button>
+      <button onClick={enableEraserMode}>Eraser</button>
+      <div>
+        <p>Yellow highlights: {yellowCount}</p>
+        <p>Cyan highlights: {cyanCount}</p>
+      </div>
+      <div ref={chartRef}>
+        {/* Your text content here */}
+        <p>Although Ashley has limited credit history, she has a strong portfolio and a growing client base, which indicates her potential for success in her freelance graphic design business. Lenders may be willing to consider her application based on her skills, experience, and potential income from her clients.</p>
+      </div>
+    </div>
   );
-}
+};
+
+export default HighlighterApp;
